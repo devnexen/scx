@@ -13,7 +13,6 @@ typedef unsigned long long u64;
 #endif
 #include <stdbool.h>
 
-
 enum consts {
 	MAX_COMM	= 16,
 };

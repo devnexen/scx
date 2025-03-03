@@ -29,6 +29,7 @@ use scxtop::{
 use anyhow::anyhow;
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
+use ::fb_procfs as procfs;
 use libbpf_rs::skel::OpenSkel;
 use libbpf_rs::skel::SkelBuilder;
 use libbpf_rs::RingBufferBuilder;
@@ -79,6 +80,10 @@ fn run_tui(tui_args: &TuiArgs) -> Result<()> {
             .install_panic_hook();
     };
 
+    let proc_reader = procfs::ProcReader::new();
+    let version = proc_reader.read_kernel_version().expect("Failed reading version");
+    let (major, minor, _) = sscanf::sscanf!(version, "{String}.{String}.{String}").expect("Failed parsing version");
+
     let config = Config::merge([
         Config::from(tui_args.clone()),
         Config::load().unwrap_or(Config::default_config()),
@@ -117,14 +122,26 @@ fn run_tui(tui_args: &TuiArgs) -> Result<()> {
                 skel.progs.on_sched_wakeup.attach()?,
             ];
 
-            // 6.13 compatability
-            if let Ok(link) = skel.progs.scx_insert_vtime.attach() {
-                links.push(link);
+            // 6.13 compatibility
+
+            if version_compare::compare(&minor, "12") == Ok(version_compare::Cmp::Gt) {
+                if let Ok(link) = skel.progs.scx_insert_vtime.attach() {
+                    links.push(link);
+                }
+                if let Ok(link) = skel.progs.scx_insert.attach() {
+                    links.push(link);
+                }
+                if let Ok(link) = skel.progs.scx_dsq_move.attach() {
+                    links.push(link);
+                }
+                if let Ok(link) = skel.progs.scx_dsq_move_set_slice.attach() {
+                    links.push(link);
+                }
+                if let Ok(link) = skel.progs.scx_dsq_move_set_vtime.attach() {
+                    links.push(link);
+                }
             }
             if let Ok(link) = skel.progs.scx_dispatch_vtime.attach() {
-                links.push(link);
-            }
-            if let Ok(link) = skel.progs.scx_insert.attach() {
                 links.push(link);
             }
             if let Ok(link) = skel.progs.scx_dispatch.attach() {
@@ -133,19 +150,10 @@ fn run_tui(tui_args: &TuiArgs) -> Result<()> {
             if let Ok(link) = skel.progs.scx_dispatch_from_dsq_set_vtime.attach() {
                 links.push(link);
             }
-            if let Ok(link) = skel.progs.scx_dsq_move_set_vtime.attach() {
-                links.push(link);
-            }
-            if let Ok(link) = skel.progs.scx_dsq_move_set_slice.attach() {
-                links.push(link);
-            }
             if let Ok(link) = skel.progs.scx_dispatch_from_dsq_set_slice.attach() {
                 links.push(link);
             }
             if let Ok(link) = skel.progs.scx_dispatch_from_dsq.attach() {
-                links.push(link);
-            }
-            if let Ok(link) = skel.progs.scx_dsq_move.attach() {
                 links.push(link);
             }
             if let Ok(link) = skel.progs.on_cpuhp_enter.attach() {

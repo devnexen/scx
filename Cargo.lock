@@ -2522,6 +2522,7 @@ dependencies = [
  "crossterm",
  "derive_deref",
  "directories",
+ "fb_procfs",
  "futures",
  "glob",
  "hashbrown 0.15.2",
@@ -2546,6 +2547,7 @@ dependencies = [
  "signal-hook",
  "simplelog",
  "smartstring",
+ "sscanf",
  "strip-ansi-escapes",
  "tokio",
  "tokio-util",
@@ -2553,6 +2555,7 @@ dependencies = [
  "tracing",
  "tracing-error",
  "tracing-subscriber",
+ "version-compare",
  "xdg",
 ]
 
